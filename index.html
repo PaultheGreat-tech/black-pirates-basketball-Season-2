@@ -39,6 +39,13 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- QRCode CDN for digital check-in QR generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- EmailJS SDK CDN -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init("YOUR_PUBLIC_KEY");
+       })();
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -202,8 +209,6 @@
                         </span>
                     </div>
                     <div class="w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-pirate-border pt-4 sm:pt-0 sm:pl-6 text-xs space-y-2 text-slate-300">
-                        <div class="flex items-center gap-2"><i data-lucide="shirt" class="w-4 h-4 text-pirate-red"></i> Dual-Side Sublimated</div>
-                        <div class="flex items-center gap-2"><i data-lucide="qr-code" class="w-4 h-4 text-pirate-cyan"></i> Digital Pass & Showcase</div>
                         <div class="flex items-center gap-2"><i data-lucide="award" class="w-4 h-4 text-amber-400"></i> Scouting Profile & Stats</div>
                     </div>
                 </div>
@@ -400,7 +405,7 @@
                                 </div>
                             </div>
                             <span class="bg-pirate-cyan/10 border border-pirate-cyan/30 text-pirate-cyan text-[10px] font-black px-3 py-1 rounded-full uppercase self-start sm:self-auto">
-                                Dual Sublimation (Black Pirates Edition)
+                                Reversible Jersey Edition
                             </span>
                         </div>
 
@@ -638,6 +643,36 @@
         </div>
     </div>
 
+    <!-- EMAIL CONFIRMATION SUCCESS MODAL -->
+    <div id="email-confirmation-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+        <div class="relative bg-pirate-dark border border-emerald-500/50 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl">
+            <button onclick="closeEmailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="mail-check" class="w-6 h-6"></i>
+            </div>
+
+            <div>
+                <span class="text-[10px] font-black uppercase text-emerald-400 tracking-widest block">REGISTRATION & EMAIL CONFIRMATION SENT</span>
+                <h3 class="text-lg font-black text-white uppercase italic mt-1">Check Your Inbox!</h3>
+            </div>
+
+            <div class="bg-pirate-card border border-pirate-border rounded-2xl p-4 text-left space-y-2 text-xs text-slate-300">
+                <p class="text-emerald-400 font-bold flex items-center gap-1.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i> Naipadala na ang kumpirmasyon sa:
+                </p>
+                <p id="confirmed-email-display" class="font-mono text-white bg-pirate-black p-2 rounded-xl border border-pirate-border"></p>
+                <p class="text-[11px] text-slate-400">Ang iyong draft profile, jersey customization (₱500 + ₱50/game), at combine schedule ay na-record na sa sistema.</p>
+            </div>
+
+            <button onclick="closeEmailModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold py-2.5 rounded-xl text-xs uppercase tracking-wider">
+                I-close at Pumunta sa Poll
+            </button>
+        </div>
+    </div>
+
     <!-- NOTIFICATION TOAST -->
     <div id="pirate-toast" class="fixed bottom-6 right-6 z-50 hidden bg-gradient-to-r from-pirate-red to-pirate-redHover text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm flex items-center gap-3 pirate-glow-red">
         <i data-lucide="check-circle-2" class="w-5 h-5 text-white"></i>
@@ -870,7 +905,7 @@
             lucide.createIcons();
         }
 
-        // Handle Registration Form Submission
+        // Handle Registration Form Submission & Email Confirmation
         function handlePlayerRegistration(e) {
             e.preventDefault();
 
@@ -881,6 +916,7 @@
             }
 
             const name = document.getElementById('reg-fullname').value;
+            const email = document.getElementById('reg-email').value;
             const pos = document.getElementById('reg-position').value;
             const age = parseInt(document.getElementById('reg-age').value);
             const height = document.getElementById('reg-height').value;
@@ -892,6 +928,7 @@
             const newProspect = {
                 id: Date.now(),
                 name: name,
+                email: email,
                 pos: pos,
                 specialty: playstyle,
                 height: height,
@@ -912,6 +949,21 @@
             renderPollGrid();
             renderRosterGrid();
 
+            // Display Email Confirmation Modal
+            document.getElementById('confirmed-email-display').innerText = email;
+            document.getElementById('email-confirmation-modal').classList.remove('hidden');
+
+            // EmailJS integration trigger (Palitan ang IDs kapag handa na)
+            /*
+            emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+                to_email: email,
+                player_name: name,
+                jersey_size: jerseySize,
+                jersey_number: jerseyChoice,
+                position: pos
+            });
+            */
+
             document.getElementById('player-registration-form').reset();
             currentUploadedPhoto = null;
             document.getElementById('photo-file-name').innerText = 'No file chosen';
@@ -920,8 +972,10 @@
                 <span class="text-[9px] font-bold mt-1">NO PHOTO</span>
             `;
             lucide.createIcons();
+        }
 
-            showToast(`Registration Complete for ${name}! Photo & details added.`);
+        function closeEmailModal() {
+            document.getElementById('email-confirmation-modal').classList.add('hidden');
             switchTab('poll');
         }
 
@@ -931,7 +985,6 @@
             const container = document.getElementById('qrcode-canvas');
             container.innerHTML = '';
 
-            // Generate simple QR code for check-in
             new QRCode(container, {
                 text: "PIRATES-COMBINE-" + Math.floor(100000 + Math.random() * 900000),
                 width: 140,
